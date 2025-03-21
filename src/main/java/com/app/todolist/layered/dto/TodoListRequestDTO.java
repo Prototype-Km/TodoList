@@ -14,7 +14,5 @@ public class TodoListRequestDTO {
     private String writer;
     private String password;
     private String contents;
-    private LocalDateTime createDate;
-    private LocalDateTime updateDate;
 
 }

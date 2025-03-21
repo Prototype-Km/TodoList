@@ -43,4 +43,21 @@ public class TodoListController {
         return new ResponseEntity<>(todoListService.read(id), HttpStatus.OK);
     }
 
+    //일정 수정하기 (할일 또는 작성자명 만 수정가능, 비밀번호 함께 받음)
+    @PatchMapping("/{id}")
+    public ResponseEntity<TodoListResponseDTO> update(
+            @PathVariable Long id,
+            @RequestBody TodoListRequestDTO todoListRequestDTO)
+    {
+
+        log.info(todoListRequestDTO.getPassword());
+        log.info("controller");
+        return new ResponseEntity<>(todoListService.update(id,todoListRequestDTO.getWriter(),todoListRequestDTO.getPassword(),todoListRequestDTO.getContents()),HttpStatus.OK);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> delete(@PathVariable Long id,@RequestBody TodoListRequestDTO todoListRequestDTO){
+        todoListService.deleteTodoList(id,todoListRequestDTO.getPassword());
+        return new ResponseEntity<>(HttpStatus.OK);
+    }
 }

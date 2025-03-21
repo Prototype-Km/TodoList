@@ -15,6 +15,7 @@ import org.springframework.web.server.ResponseStatusException;
 import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
@@ -35,7 +36,7 @@ public class JdbcTemplateTodoListRepository implements TodoListRepository {
 
     //일정 등록
     @Override
-    public TodoListResponseDTO save(TodoList todoList) {
+    public TodoListResponseDTO saveTodoList(TodoList todoList) {
         SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate);
         jdbcInsert.withTableName("todolist").usingGeneratedKeyColumns("id");
         Map<String, Object> parameters = new HashMap<>();
@@ -62,7 +63,7 @@ public class JdbcTemplateTodoListRepository implements TodoListRepository {
      * 전체 조회
      */
     @Override
-    public List<TodoListResponseDTO> findAll() {
+    public List<TodoListResponseDTO> findAllTodoList() {
         return jdbcTemplate.query("SELECT * FROM todolist ORDER BY updatedDate , writer DESC;",todoListRowMapper());
     }
 
@@ -79,8 +80,19 @@ public class JdbcTemplateTodoListRepository implements TodoListRepository {
 //   예외처리
     @Override
     public TodoList findTodoByIdOrElseThrow(Long id) {
-        List<TodoList> result = jdbcTemplate.query("select * from todolist where id = ?", todoListRowMapperV2(), id);
+        List<TodoList> result = jdbcTemplate.query("SELECT * FROM todolist WHERE id = ?", todoListRowMapperV2(), id);
         return result.stream().findAny().orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Does not exist id ="+id));
+    }
+
+    //수정하기 (작성자 or 일정)
+    @Override
+    public int updateWriterOrContents(Long id, String writer, String contents) {
+        return jdbcTemplate.update("UPDATE todolist  SET writer = ?,contents = ?,updatedDate = ? WHERE id = ?",writer,contents, LocalDateTime.now(),id);
+    }
+
+    @Override
+    public int deleteTodoList(Long id) {
+        return jdbcTemplate.update("DELETE FROM todolist WHERE id = ?",id);
     }
 
 
@@ -90,8 +102,8 @@ public class JdbcTemplateTodoListRepository implements TodoListRepository {
             public TodoList mapRow(ResultSet rs, int rowNum) throws SQLException {
                 return new TodoList(
                         rs.getLong("id"),
-                        rs.getString("password"),
                         rs.getString("writer"),
+                        rs.getString("password"),
                         rs.getString("contents"),
                         rs.getTimestamp("createdDate").toLocalDateTime(),
                         rs.getTimestamp("updatedDate").toLocalDateTime()

@@ -19,4 +19,9 @@ public interface TodoListService {
     TodoListResponseDTO read(Long id);
     //null 처리
     TodoList findTodoByIdOrElseThrow(Long id);
+
+    //수정하기
+    TodoListResponseDTO update(Long id,String inputPassword,String writer, String contents);
+    //일정삭제
+ void deleteTodoList(Long id, String inputPassword);
 }
