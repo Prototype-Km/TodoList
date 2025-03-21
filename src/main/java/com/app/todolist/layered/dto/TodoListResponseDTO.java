@@ -1,29 +1,32 @@
 package com.app.todolist.layered.dto;
 
 import com.app.todolist.layered.entity.TodoList;
-import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Getter;
 
-import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 @Getter
-@AllArgsConstructor
 @Builder
 public class TodoListResponseDTO {
     private Long id;
     private String writer;
     private String contents;
-    private LocalDateTime createDate;
-    private LocalDateTime updateDate;
+    private String createdDate;
+    private String updatedDate;
 
-//    생성자? toDTO
-    public TodoListResponseDTO(TodoList todoList){
-        this.id = todoList.getId();
-        this.writer = todoList.getWriter();
-        this.contents = todoList.getContents();
-        this.createDate = todoList.getCreateDate();
-        this.updateDate = todoList.getUpdateDate();
+
+//  toDTO
+    public static TodoListResponseDTO toDTO(TodoList todoList){
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+
+        return TodoListResponseDTO.builder()
+                .id(todoList.getId())
+                .writer(todoList.getWriter())
+                .contents(todoList.getContents())
+                .createdDate(todoList.getCreatedDate().format(formatter))  
+                .updatedDate(todoList.getUpdatedDate().format(formatter))
+                .build();
     }
 
 
