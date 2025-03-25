@@ -1,5 +1,6 @@
 package com.app.todolist.layered2.repository;
 
+import com.app.todolist.layered2.dto.TodoListRequestDTO2;
 import com.app.todolist.layered2.dto.TodoListResponseDTO2;
 import com.app.todolist.layered2.entity.TodoList2;
 
@@ -13,6 +14,7 @@ public interface TodoListRepository2 {
 
     //일정 전체 조회 (등록된 일정 불러오기)
     List<TodoListResponseDTO2> findAllTodoList();
+    List<TodoListRequestDTO2> findAllByUserId(Long userId);
 
     //선택 일정 조회
     Optional<TodoListResponseDTO2> findById(Long id);

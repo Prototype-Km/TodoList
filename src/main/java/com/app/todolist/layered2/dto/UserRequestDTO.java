@@ -13,7 +13,7 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class UserRequestDTO {
-    //    @NotBlank(message = "이름을 작성해주세요.")
+//    @NotBlank(message = "이름을 작성해주세요.")
     private String userName;
 
     @NotBlank(message = "이메일을 작성해주세요.")

@@ -4,7 +4,9 @@ package com.app.todolist.layered2.controller;
 import com.app.todolist.layered2.dto.TodoListResponseDTO2;
 import com.app.todolist.layered2.dto.UserRequestDTO;
 import com.app.todolist.layered2.dto.UserResponseDTO;
+import com.app.todolist.layered2.entity.User;
 import com.app.todolist.layered2.service.UserService;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
@@ -30,8 +32,10 @@ public class UserController {
 
     //로그인
     @PostMapping("/login")
-    public ResponseEntity<UserResponseDTO> login(@RequestBody @Valid UserRequestDTO userRequestDTO){
-        return new ResponseEntity<>(userService.login(userRequestDTO),HttpStatus.OK);
+    public ResponseEntity<UserResponseDTO> login(@RequestBody @Valid UserRequestDTO userRequestDTO, HttpSession session){
+        UserResponseDTO userDTO = userService.login(userRequestDTO);
+        session.setAttribute("loginUser",userDTO.getId());
+        return new ResponseEntity<>(userDTO,HttpStatus.OK);
     }
 }
 

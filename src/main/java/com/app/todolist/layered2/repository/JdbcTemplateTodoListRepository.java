@@ -1,6 +1,7 @@
 package com.app.todolist.layered2.repository;
 
 
+import com.app.todolist.layered2.dto.TodoListRequestDTO2;
 import com.app.todolist.layered2.dto.TodoListResponseDTO2;
 import com.app.todolist.layered2.entity.TodoList2;
 import lombok.extern.slf4j.Slf4j;
@@ -39,8 +40,9 @@ public class JdbcTemplateTodoListRepository implements TodoListRepository2 {
     public TodoListResponseDTO2 saveTodoList(TodoList2 todoList) {
         SimpleJdbcInsert jdbcInsert = new SimpleJdbcInsert(jdbcTemplate);
         jdbcInsert.withTableName("tbl_todolist").usingGeneratedKeyColumns("id");
+
         Map<String, Object> parameters = new HashMap<>();
-        parameters.put("userId",todoList.getUserId());
+        parameters.put("userId", todoList.getUserId());
         parameters.put("contents", todoList.getContents());
         parameters.put("createdDate", todoList.getCreatedDate());
         parameters.put("updatedDate", todoList.getUpdatedDate());
@@ -55,20 +57,23 @@ public class JdbcTemplateTodoListRepository implements TodoListRepository2 {
                 .createdDate(todoList.getCreatedDate().format(FORMATTER))
                 .updatedDate(todoList.getUpdatedDate().format(FORMATTER))
                 .build();
-
     }
 
-    /**
-     * 전체 조회  -> 작성자로 조회 ?
-     */
+
+     //전체 조회
     @Override
     public List<TodoListResponseDTO2> findAllTodoList() {
         return jdbcTemplate.query("SELECT * FROM todolist ORDER BY updatedDate , writer DESC;",todoListRowMapper());
     }
 
-    /**
-     * TodoList id로 조회
-     */
+    //전체 조회 (userId로 조회)
+    @Override
+    public List<TodoListRequestDTO2> findAllByUserId(Long userId) {
+        return List.of();
+    }
+
+
+    // 상세보기
     @Override
     public Optional<TodoListResponseDTO2> findById(Long id) {
         List<TodoListResponseDTO2> result = jdbcTemplate.query(

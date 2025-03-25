@@ -5,11 +5,14 @@ import com.app.todolist.layered2.dto.TodoListRequestDTO2;
 import com.app.todolist.layered2.dto.TodoListResponseDTO2;
 import com.app.todolist.layered2.service.TodoListService2;
 import com.app.todolist.layered2.service.UserService;
+import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -21,17 +24,22 @@ public class TodoListController2 {
 
     //서비스  생성자주입
     private final TodoListService2 todoListService;
-    private final UserService userService;
+    private final HttpSession session;
 
-    public TodoListController2(TodoListService2 todoListService,UserService userService){
+    public TodoListController2(TodoListService2 todoListService,HttpSession session){
         this.todoListService = todoListService;
-        this.userService = userService;
+        this.session = session;
     }
 
     //일정 생성
     @PostMapping
     public ResponseEntity<TodoListResponseDTO2> write(@RequestBody @Valid TodoListRequestDTO2 todoListRequestDTO){
-        return  new ResponseEntity<>(todoListService.write(todoListRequestDTO), HttpStatus.OK);
+
+        Long userId = (Long)session.getAttribute("loginUser");
+        if(userId == null){
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"로그인을 해주세요.");
+        }
+        return ResponseEntity.ok(todoListService.write(userId, todoListRequestDTO));
     }
 
     //일정 조회 (전체조회)

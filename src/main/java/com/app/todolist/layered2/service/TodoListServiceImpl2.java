@@ -28,14 +28,15 @@ public class TodoListServiceImpl2 implements TodoListService2 {
 
     //회원 id검사
     @Override
-    public TodoListResponseDTO2 write(TodoListRequestDTO2 todoListRequestDTO) {
+    public TodoListResponseDTO2 write(Long userId,TodoListRequestDTO2 todoListRequestDTO) {
 
-        TodoList2 todoList = new TodoList2(
-                todoListRequestDTO.getUserId(),
-                todoListRequestDTO.getContents(),
-                LocalDateTime.now(),        //createdDate
-                LocalDateTime.now());       //updatedDate
-       return todoListRepository.saveTodoList(todoList);
+        TodoList2 todoList2 = TodoList2.builder()
+                .userId(userId)
+                .contents(todoListRequestDTO.getContents())
+                .createdDate(LocalDateTime.now())
+                .updatedDate(LocalDateTime.now())
+                .build();
+       return todoListRepository.saveTodoList(todoList2);
     }
 
     @Override

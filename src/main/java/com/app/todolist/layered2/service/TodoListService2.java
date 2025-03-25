@@ -11,7 +11,7 @@ import java.util.Optional;
 public interface TodoListService2 {
 
     //일정 등록
-    TodoListResponseDTO2 write(TodoListRequestDTO2 todoListRequestDTO);
+    TodoListResponseDTO2 write(Long userId,TodoListRequestDTO2 todoListRequestDTO);
 
     //전체 조회 //page
     List<TodoListResponseDTO2> getList();
