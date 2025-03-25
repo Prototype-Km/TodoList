@@ -7,17 +7,17 @@ import com.app.todolist.layered2.entity.TodoList2;
 import com.app.todolist.layered2.entity.User;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cglib.core.Local;
+import org.springframework.http.HttpStatus;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcInsert;
 import org.springframework.stereotype.Repository;
+import org.springframework.web.server.ResponseStatusException;
 
 import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -60,6 +60,17 @@ public class JdbcTemplateUserRepository implements UserRepository {
         List<User> result = jdbcTemplate.query(
                 "SELECT * FROM tbl_user WHERE user_email = ? AND user_password = ?", userRowMapper(), userEmail, userPassword);
         return result.stream().findAny();
+    }
+
+    @Override
+    public User findByIdOrElseThrow(Long id) {
+        List<User> result = jdbcTemplate.query("SELECT * FROM tbl_user WHERE id = ?",userRowMapper(),id);
+        return result.stream().findAny().orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Does not exist id ="+id));
+    }
+
+    @Override
+    public List<UserResponseDTO> findAll() {
+        return jdbcTemplate.query("SELECT id,user_name,user_email,created_date,updated_date from tbl_user",userResponseDTORowMapper());
     }
 
 

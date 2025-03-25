@@ -1,10 +1,8 @@
 package com.app.todolist.layered2.controller;
 
 
-import com.app.todolist.layered2.dto.TodoListResponseDTO2;
 import com.app.todolist.layered2.dto.UserRequestDTO;
 import com.app.todolist.layered2.dto.UserResponseDTO;
-import com.app.todolist.layered2.entity.User;
 import com.app.todolist.layered2.service.UserService;
 import jakarta.servlet.http.HttpSession;
 import jakarta.validation.Valid;
@@ -12,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -36,6 +36,12 @@ public class UserController {
         UserResponseDTO userDTO = userService.login(userRequestDTO);
         session.setAttribute("loginUser",userDTO.getId());
         return new ResponseEntity<>(userDTO,HttpStatus.OK);
+    }
+
+    //회원 전체보기
+    @GetMapping
+    public List<UserResponseDTO> getList(){
+        return userService.getList();
     }
 }
 

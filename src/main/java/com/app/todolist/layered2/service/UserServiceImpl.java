@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Slf4j
 @Service
@@ -40,5 +41,21 @@ public class UserServiceImpl implements UserService {
         User user = userRepository.findByUserEmailAndPassword(userRequestDTO.getUserEmail(), userRequestDTO.getUserPassword())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인에 실패하셨습니다. 다시 시도해주세요"));
         return UserResponseDTO.toDTO(user); // DTO로 변환
+    }
+
+    @Override
+    public List<UserResponseDTO> getList() {
+        return userRepository.findAll();
+    }
+
+
+    //비번검증
+    @Override
+    public User validatePassword(Long userId, String inputPassword) {
+        User user = userRepository.findByIdOrElseThrow(userId);
+        if(!user.getUserPassword().equals(inputPassword)){
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"다시 입력해주세요. ");
+        }
+        return user;
     }
 }

@@ -1,6 +1,8 @@
 package com.app.todolist.layered2.repository;
 
 
+import com.app.todolist.layered2.dto.Paging;
+import com.app.todolist.layered2.dto.TodoListPageRequestDTO;
 import com.app.todolist.layered2.dto.TodoListRequestDTO2;
 import com.app.todolist.layered2.dto.TodoListResponseDTO2;
 import com.app.todolist.layered2.entity.TodoList2;
@@ -18,10 +20,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
+import java.util.*;
 
 @Slf4j
 @Repository
@@ -59,13 +58,11 @@ public class JdbcTemplateTodoListRepository implements TodoListRepository2 {
                 .build();
     }
 
-
     //전체 조회
     @Override
     public List<TodoListResponseDTO2> findAllTodoList(){
         return jdbcTemplate.query("SELECT t.id, t.user_id AS user_id, u.user_name, contents, t.created_date, t.updated_date FROM tbl_user u JOIN tbl_todolist t ON u.id = t.user_id ORDER BY updated_date , u.user_name DESC",todoListRowMapper());
     }
-
 
     //전체 조회 (userId로 조회)
     @Override
@@ -78,28 +75,51 @@ public class JdbcTemplateTodoListRepository implements TodoListRepository2 {
     // 상세보기
     @Override
     public Optional<TodoListResponseDTO2> findById(Long id) {
-        List<TodoListResponseDTO2> result = jdbcTemplate.query(
-                "SELECT * FROM todolist WHERE id = ?",todoListRowMapper(),id);
+    String sql ="SELECT t.*, u.user_name, u.user_email " +
+                "FROM tbl_todolist t " +
+                "JOIN tbl_user u ON t.user_id = u.id " +
+                "WHERE t.id = ?";
+
+        List<TodoListResponseDTO2> result = jdbcTemplate.query(sql, todoListRowMapper(), id);
         return result.stream().findAny();
     }
 
 //   예외처리
     @Override
     public TodoList2 findTodoByIdOrElseThrow(Long id) {
-        List<TodoList2> result = jdbcTemplate.query("SELECT * FROM todolist WHERE id = ?", todoListRowMapperV2(), id);
+        List<TodoList2> result = jdbcTemplate.query("SELECT * FROM tbl_todolist WHERE id = ?", todoListRowMapperV2(), id);
         return result.stream().findAny().orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,"Does not exist id ="+id));
     }
 
     //수정하기 (작성자 or 일정)
     @Override
-    public int updateWriterOrContents(Long id, String writer, String contents) {
-//        return jdbcTemplate.update("UPDATE todolist  SET writer = ?,contents = ?,updatedDate = ? WHERE id = ?",writer,contents, LocalDateTime.now(),id);
-        return 0;
+    public int updateWriterOrContents(Long id, String contents) {
+        return jdbcTemplate.update("UPDATE tbl_todolist SET contents = ?,updated_date = ? WHERE id = ?",contents, LocalDateTime.now(),id);
     }
 
     @Override
     public int deleteTodoList(Long id) {
-        return jdbcTemplate.update("DELETE FROM todolist WHERE id = ?",id);
+        return jdbcTemplate.update("DELETE FROM tbl_todolist WHERE id = ?",id);
+    }
+
+    @Override
+    public int countWithCondition(TodoListPageRequestDTO requestDTO) {
+        String sql = "SELECT COUNT(*) FROM tbl_todolist t JOIN tbl_user u ON t.user_id = u.id WHERE 1=1";
+        // 파라미터 바인딩용
+        List<Object> params = new ArrayList<>();
+
+        // 동적 조건 추가
+        if (requestDTO.getUserName() != null && !requestDTO.getUserName().isBlank()) {
+            sql += " AND u.user_name LIKE ?";
+            params.add("%" + requestDTO.getUserName() + "%");
+        }
+
+        if (requestDTO.getContents() != null && !requestDTO.getContents().isBlank()) {
+            sql += " AND t.contents LIKE ?";
+            params.add("%" + requestDTO.getContents() + "%");
+        }
+
+        return jdbcTemplate.queryForObject(sql, params.toArray(), Integer.class);
     }
 
     private RowMapper<TodoList2> todoListRowMapperV2(){
@@ -133,6 +153,25 @@ public class JdbcTemplateTodoListRepository implements TodoListRepository2 {
         };
 
     }
+    //페이징
+    public List<TodoListResponseDTO2> findWithConditionAndPaging(TodoListPageRequestDTO request, Paging paging) {
+        String sql = "SELECT t.*, u.user_name, u.user_email FROM tbl_todolist t " +
+                "JOIN tbl_user u ON t.user_id = u.id " +
+                "WHERE u.user_name LIKE ? AND t.contents LIKE ? " +
+                "ORDER BY t.updated_date DESC " +
+                "LIMIT ? OFFSET ?";
+
+        return jdbcTemplate.query(
+                sql,
+                todoListRowMapper(),
+                "%" + request.getUserName() + "%",
+                "%" + request.getContents() + "%",
+                paging.getPageSize(),
+                paging.getOffset()
+        );
+    }
+
+
 
 
 }

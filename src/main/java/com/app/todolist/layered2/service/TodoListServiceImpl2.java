@@ -1,11 +1,16 @@
 package com.app.todolist.layered2.service;
 
+import com.app.todolist.layered.entity.TodoList;
+import com.app.todolist.layered2.dto.Paging;
+import com.app.todolist.layered2.dto.TodoListPageRequestDTO;
 import com.app.todolist.layered2.dto.TodoListRequestDTO2;
 import com.app.todolist.layered2.dto.TodoListResponseDTO2;
 import com.app.todolist.layered2.entity.TodoList2;
 import com.app.todolist.layered2.entity.User;
 import com.app.todolist.layered2.repository.TodoListRepository2;
+import com.app.todolist.layered2.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.coyote.Response;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,12 +24,13 @@ import java.util.Optional;
 @Service
 public class TodoListServiceImpl2 implements TodoListService2 {
 
+    private final UserRepository userRepository;
     private final TodoListRepository2 todoListRepository;
     //생성자 주입
-    public TodoListServiceImpl2(TodoListRepository2 todoListRepository){
+    public TodoListServiceImpl2(TodoListRepository2 todoListRepository,UserRepository userRepository){
         this.todoListRepository = todoListRepository;
+        this.userRepository = userRepository;
     }
-
 
     //회원 id검사
     @Override
@@ -52,17 +58,21 @@ public class TodoListServiceImpl2 implements TodoListService2 {
         return todoListRepository.findAllByUserId(userId);
     }
 
+    @Override
+    public List<TodoListResponseDTO2> findWithConditionAndPaging(TodoListPageRequestDTO request, Paging paging) {
+        return todoListRepository.findWithConditionAndPaging(request,paging);
+    }
+
+    @Override
+    public int countWithCondition(TodoListPageRequestDTO requestDTO) {
+        return todoListRepository.countWithCondition(requestDTO);
+    }
 
     @Override
     public TodoListResponseDTO2 read(Long id) {
-//        Optional<TodoListResponseDTO> todoList= todoListRepository.findById(id);
-        TodoList2 selectedTodoList = findTodoByIdOrElseThrow(id);
-     //ReponseDTO로 바꾸면서 password빼기.
-//        log.info(selectedTodoList.getPassword());
-//        TodoListResponseDTO dto = TodoListResponseDTO.toDTO(selectedTodoList);
-//        log.info(String.valueOf(dto));
-//        return TodoListResponseDTO.toDTO(selectedTodoList);
-        return null;
+        return  todoListRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "다시 시도해주세요"));
+
     }
 
     @Override
@@ -70,43 +80,39 @@ public class TodoListServiceImpl2 implements TodoListService2 {
         return todoListRepository.findTodoByIdOrElseThrow(id);
     }
 
-
     @Transactional
     @Override
-    public TodoListResponseDTO2 update(Long id, String writer , String inputPassword, String contents) {
-        log.info(inputPassword);
+    public TodoListResponseDTO2 update(Long id, String inputPassword, String contents) {
 
-        //Validation <BindingResult>?
-        if(writer == null || contents == null){
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"The title and content are required values.");
+        log.info("service");
+        //일정 있는지 조회
+        TodoList2 todoList2 = todoListRepository.findTodoByIdOrElseThrow(id);
+        log.info("service");
+
+        //회원Id조회
+        User user = userRepository.findByIdOrElseThrow(todoList2.getUserId());
+
+        log.info("====수정 비번 검증 ");
+        log.info("입력 비번: {}", inputPassword);
+        log.info("DB n비번: {}", user.getUserPassword());
+        // 비밀번호 검증
+        if(!user.getUserPassword().equals(inputPassword)){
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"content are required values.");
         }
-        // 비밀번호 검증 / 일정검증
-//        TodoList todoList = validatePassword(id, inputPassword);
-//
-//        TodoList updateTodo = new TodoList(
-//                todoList.getId(),
-//                writer,
-//                todoList.getPassword(),
-//                contents,
-//                todoList.getCreatedDate(),
-//                LocalDateTime.now()
-//        );
+        log.info(todoList2.getContents());
+        log.info(contents);
+        //수정
+        int i = todoListRepository.updateWriterOrContents(id, contents);
+        log.info("수정");
 
-//    int updatedRaw=todoListRepository.updateWriterOrContents(updateTodo.getId(),updateTodo.getWriter(),updateTodo.getContents());
-        log.info("입력 비밀번호: {}", inputPassword);
-//        log.info("DB 비밀번호: {}", todoList.getPassword());
+        if(i == 0){
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,"다시 시도해주세요");
+        }
+        //다시 반환
+        log.info(todoList2.getContents());
+        return todoListRepository.findById(id)
 
-    //업데이트 실패
-//    if(updatedRaw == 0){
-//        throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "일정 수정 실패");
-//    }
-    //수정된 일정 다시 조회
-    TodoList2 updatedTodo = findTodoByIdOrElseThrow(id);
-    //TodoList -> toDTO로 바꾸기
-    log.info("입력 비밀번호: {}", inputPassword);
-//    log.info("DB 비밀번호: {}", todoList.getPassword());
-//    return TodoListResponseDTO.toDTO(updatedTodo);
-        return null;
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "조회 실패"));
     }
 
 
@@ -114,33 +120,27 @@ public class TodoListServiceImpl2 implements TodoListService2 {
     @Override
     public void deleteTodoList(Long id,String inputPassword) {
 
-//        validatePassword(id,inputPassword);
-
+        TodoList2 todo = todoListRepository.findTodoByIdOrElseThrow(id);
+        validateUserPassword(todo.getUserId(), inputPassword);
         int deleteRow = todoListRepository.deleteTodoList(id);
 
-        if(deleteRow == 0){
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Does not exist id ="+id);
+        if (deleteRow == 0) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Does not exist id =" + id);
+        }
+
+    }
+    /**
+     * 내부에 비밀번호 검증 메서드 구현
+     */
+    private void validateUserPassword(Long userId, String inputPassword) {
+        // DB에서 User 조회
+        User user = userRepository.findByIdOrElseThrow(userId);
+
+        // 평문 비교(실무에서는 해시 비교 추천)
+        if (!user.getUserPassword().equals(inputPassword)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "비밀번호가 일치하지 않습니다.");
         }
     }
-
-    @Override
-    public Optional<User> findByUserPassword(Long id, String inputPassword) {
-
-
-        return null;
-
-    }
-
-
-    //비밀번호 검증
-//    private TodoList validatePassword(Long id, String inputPassword){
-
-//        log.info("validatePassword");
-//        if(!existingTodo.getPassword().equals(inputPassword)){
-//            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED);
-//        }
-//        return existingTodo;
-//    }
 
 
 }
