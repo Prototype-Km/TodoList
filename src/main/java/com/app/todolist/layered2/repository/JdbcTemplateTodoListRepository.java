@@ -44,8 +44,8 @@ public class JdbcTemplateTodoListRepository implements TodoListRepository2 {
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("userId", todoList.getUserId());
         parameters.put("contents", todoList.getContents());
-        parameters.put("createdDate", todoList.getCreatedDate());
-        parameters.put("updatedDate", todoList.getUpdatedDate());
+        parameters.put("created_date", todoList.getCreatedDate());
+        parameters.put("updated_date", todoList.getUpdatedDate());
 
         Number key = jdbcInsert.executeAndReturnKey(new MapSqlParameterSource(parameters));
 
@@ -60,16 +60,18 @@ public class JdbcTemplateTodoListRepository implements TodoListRepository2 {
     }
 
 
-     //전체 조회
+    //전체 조회
     @Override
-    public List<TodoListResponseDTO2> findAllTodoList() {
-        return jdbcTemplate.query("SELECT * FROM todolist ORDER BY updatedDate , writer DESC;",todoListRowMapper());
+    public List<TodoListResponseDTO2> findAllTodoList(){
+        return jdbcTemplate.query("SELECT t.id, t.user_id AS user_id, u.user_name, contents, t.created_date, t.updated_date FROM tbl_user u JOIN tbl_todolist t ON u.id = t.user_id ORDER BY updated_date , u.user_name DESC",todoListRowMapper());
     }
+
 
     //전체 조회 (userId로 조회)
     @Override
-    public List<TodoListRequestDTO2> findAllByUserId(Long userId) {
-        return List.of();
+    public List<TodoListResponseDTO2> findAllByUserId(Long userId) {
+        return jdbcTemplate.query(
+                "SELECT t.id,t.user_id AS user_id,u.user_name,contents,t.created_date,t.updated_date FROM tbl_user u JOIN tbl_todolist t ON u.id = t.user_id WHERE t.user_id = ?",todoListRowMapper(),userId);
     }
 
 
@@ -91,7 +93,8 @@ public class JdbcTemplateTodoListRepository implements TodoListRepository2 {
     //수정하기 (작성자 or 일정)
     @Override
     public int updateWriterOrContents(Long id, String writer, String contents) {
-        return jdbcTemplate.update("UPDATE todolist  SET writer = ?,contents = ?,updatedDate = ? WHERE id = ?",writer,contents, LocalDateTime.now(),id);
+//        return jdbcTemplate.update("UPDATE todolist  SET writer = ?,contents = ?,updatedDate = ? WHERE id = ?",writer,contents, LocalDateTime.now(),id);
+        return 0;
     }
 
     @Override
@@ -99,17 +102,16 @@ public class JdbcTemplateTodoListRepository implements TodoListRepository2 {
         return jdbcTemplate.update("DELETE FROM todolist WHERE id = ?",id);
     }
 
-
     private RowMapper<TodoList2> todoListRowMapperV2(){
         return new RowMapper<TodoList2>() {
             @Override
             public TodoList2 mapRow(ResultSet rs, int rowNum) throws SQLException {
                 return new TodoList2(
                         rs.getLong("id"),
-                        rs.getLong("userId"),
+                        rs.getLong("user_id"),
                         rs.getString("contents"),
-                        rs.getTimestamp("createdDate").toLocalDateTime(),
-                        rs.getTimestamp("updatedDate").toLocalDateTime()
+                        rs.getTimestamp("created_date").toLocalDateTime(),
+                        rs.getTimestamp("updated_date").toLocalDateTime()
                 );
             }
         };
@@ -121,12 +123,11 @@ public class JdbcTemplateTodoListRepository implements TodoListRepository2 {
             public TodoListResponseDTO2 mapRow(ResultSet rs, int rowNum) throws SQLException {
                 return TodoListResponseDTO2.builder()
                         .id(rs.getLong("id"))
-                        .userId(rs.getLong("userId"))
-                        .userEmail(rs.getString("email"))
-                        .userName(rs.getString("name"))
+                        .userId(rs.getLong("user_id"))
+                        .userName(rs.getString("user_name"))
                         .contents(rs.getString("contents"))
-                        .createdDate(rs.getTimestamp("createdDate").toLocalDateTime().format(FORMATTER))
-                        .updatedDate(rs.getTimestamp("updatedDate").toLocalDateTime().format(FORMATTER))
+                        .createdDate(rs.getTimestamp("created_date").toLocalDateTime().format(FORMATTER))
+                        .updatedDate(rs.getTimestamp("updated_date").toLocalDateTime().format(FORMATTER))
                         .build();
             }
         };

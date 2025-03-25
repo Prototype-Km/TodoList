@@ -4,7 +4,6 @@ import com.app.todolist.layered2.dto.UserRequestDTO;
 import com.app.todolist.layered2.dto.UserResponseDTO;
 import com.app.todolist.layered2.entity.User;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface UserRepository {

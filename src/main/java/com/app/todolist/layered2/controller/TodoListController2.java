@@ -6,6 +6,7 @@ import com.app.todolist.layered2.dto.TodoListResponseDTO2;
 import com.app.todolist.layered2.service.TodoListService2;
 import com.app.todolist.layered2.service.UserService;
 import jakarta.servlet.http.HttpSession;
+import jakarta.validation.Path;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -37,7 +38,7 @@ public class TodoListController2 {
 
         Long userId = (Long)session.getAttribute("loginUser");
         if(userId == null){
-            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED,"로그인을 해주세요.");
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인을 해주세요.");
         }
         return ResponseEntity.ok(todoListService.write(userId, todoListRequestDTO));
     }
@@ -46,6 +47,13 @@ public class TodoListController2 {
     @GetMapping
     public List<TodoListResponseDTO2> getList(){
         return todoListService.getList();
+    }
+
+//  유저 id로 전체 일정 조회
+//  작성자의 고유 식별자를 통해 일정이 검색이 될 수 있도록 전체 일정 조회 코드
+    @GetMapping("/user/{userId}")
+    public List<TodoListResponseDTO2> findAllByUserId(@PathVariable Long userId){
+         return todoListService.findAllByUserId(userId);
     }
 
     //상세보기
@@ -60,12 +68,10 @@ public class TodoListController2 {
             @PathVariable Long id,
             @RequestBody TodoListRequestDTO2 todoListRequestDTO)
     {
-
 //        log.info(todoListRequestDTO.getPassword());
         log.info("controller");
 //        return new ResponseEntity<>(todoListService.update(id,todoListRequestDTO.getWriter(),todoListRequestDTO.getPassword(),todoListRequestDTO.getContents()),HttpStatus.OK);
         return null;
-
     }
 
     @DeleteMapping("/{id}")

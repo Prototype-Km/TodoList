@@ -39,10 +39,19 @@ public class TodoListServiceImpl2 implements TodoListService2 {
        return todoListRepository.saveTodoList(todoList2);
     }
 
+    //전체보기
     @Override
     public List<TodoListResponseDTO2> getList() {
         return todoListRepository.findAllTodoList();
     }
+
+
+    //전체보기 (유저 id)
+    @Override
+    public List<TodoListResponseDTO2> findAllByUserId(Long userId) {
+        return todoListRepository.findAllByUserId(userId);
+    }
+
 
     @Override
     public TodoListResponseDTO2 read(Long id) {

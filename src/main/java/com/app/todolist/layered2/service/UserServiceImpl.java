@@ -39,7 +39,6 @@ public class UserServiceImpl implements UserService {
         // 이메일 + 비밀번호로 유저 조회
         User user = userRepository.findByUserEmailAndPassword(userRequestDTO.getUserEmail(), userRequestDTO.getUserPassword())
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.UNAUTHORIZED, "로그인에 실패하셨습니다. 다시 시도해주세요"));
-
         return UserResponseDTO.toDTO(user); // DTO로 변환
     }
 }
