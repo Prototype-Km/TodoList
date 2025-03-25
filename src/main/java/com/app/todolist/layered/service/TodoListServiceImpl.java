@@ -62,12 +62,14 @@ public class TodoListServiceImpl implements TodoListService {
     @Transactional
     @Override
     public TodoListResponseDTO update(Long id,String writer ,String inputPassword, String contents) {
-        log.info("=====update=====");
-        // 비밀번호 검증 / 일정검증
         log.info(inputPassword);
+
+        //Validation <BindingResult>?
+        if(writer == null || contents == null){
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,"The title and content are required values.");
+        }
+        // 비밀번호 검증 / 일정검증
         TodoList todoList = validatePassword(id, inputPassword);
-        log.info("입력 비밀번호: {}", inputPassword);
-        log.info("DB 비밀번호: {}", todoList.getPassword());
 
         TodoList updateTodo = new TodoList(
                 todoList.getId(),
@@ -77,11 +79,12 @@ public class TodoListServiceImpl implements TodoListService {
                 todoList.getCreatedDate(),
                 LocalDateTime.now()
         );
+
     int updatedRaw=todoListRepository.updateWriterOrContents(updateTodo.getId(),updateTodo.getWriter(),updateTodo.getContents());
         log.info("입력 비밀번호: {}", inputPassword);
         log.info("DB 비밀번호: {}", todoList.getPassword());
-    //일정 수정
-    //에러발생
+
+    //업데이트 실패
     if(updatedRaw == 0){
         throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "일정 수정 실패");
     }
@@ -106,6 +109,7 @@ public class TodoListServiceImpl implements TodoListService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,"Does not exist id ="+id);
         }
     }
+
 
     //비밀번호 검증
     private TodoList validatePassword(Long id, String inputPassword){
